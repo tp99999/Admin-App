@@ -3,279 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Quản lý Admin</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Admin Panel - LiveDie Bot</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel cho JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--tg-theme-bg-color, #f3f4f6); color: var(--tg-theme-text-color, #1f2937); }
-        .tg-card { background-color: var(--tg-theme-secondary-bg-color, #ffffff); }
-        .tg-text { color: var(--tg-theme-text-color, #1f2937); }
-        .tg-hint { color: var(--tg-theme-hint-color, #6b7280); }
-        .tg-btn { background-color: var(--tg-theme-button-color, #3b82f6); color: var(--tg-theme-button-text-color, #ffffff); }
-        
-        .tab-btn { padding: 10px; font-weight: 600; text-align: center; border-bottom: 2px solid transparent; cursor: pointer; color: var(--tg-theme-hint-color, #6b7280); flex: 1; }
-        .tab-btn.active { border-bottom-color: var(--tg-theme-button-color, #3b82f6); color: var(--tg-theme-button-color, #3b82f6); }
-        .tab-content { display: none; padding: 16px; }
-        .tab-content.active { display: block; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent;}
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #60a5fa; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     </style>
 </head>
 <body>
+    <div id="root"></div>
 
-    <!-- Header Tabs -->
-    <div class="flex tg-card sticky top-0 shadow-sm z-10">
-        <div class="tab-btn active" onclick="switchTab('users')"><i class="fas fa-users mb-1"></i><br><span class="text-xs">User</span></div>
-        <div class="tab-btn" onclick="switchTab('monitors')"><i class="fas fa-eye mb-1"></i><br><span class="text-xs">Monitor</span></div>
-        <div class="tab-btn" onclick="switchTab('codes')"><i class="fas fa-gift mb-1"></i><br><span class="text-xs">Code</span></div>
-        <div class="tab-btn" onclick="switchTab('settings')"><i class="fas fa-cog mb-1"></i><br><span class="text-xs">Cài đặt</span></div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-    <!-- Dữ liệu User -->
-    <div id="users" class="tab-content active">
-        <h2 class="text-lg font-bold mb-3 tg-text"><i class="fas fa-users"></i> Danh sách người dùng</h2>
-        <div class="flex justify-between items-center mb-4 tg-card p-3 rounded-lg shadow-sm">
-            <span class="tg-text font-semibold">Tổng User: <span id="total-users" class="text-blue-500">0</span></span>
-        </div>
-        <div id="users-container" class="space-y-3">
-            <!-- Render bằng JS -->
-        </div>
-    </div>
-
-    <!-- Dữ liệu Monitor -->
-    <div id="monitors" class="tab-content">
-        <h2 class="text-lg font-bold mb-3 tg-text"><i class="fas fa-eye"></i> UIDs đang được theo dõi</h2>
-        <div class="flex justify-between items-center mb-4 tg-card p-3 rounded-lg shadow-sm">
-            <span class="tg-text font-semibold">Tổng UID: <span id="total-monitors" class="text-blue-500">0</span></span>
-        </div>
-        <div id="monitors-container" class="space-y-3">
-            <!-- Render bằng JS -->
-        </div>
-    </div>
-
-    <!-- Tạo Code -->
-    <div id="codes" class="tab-content">
-        <h2 class="text-lg font-bold mb-3 tg-text"><i class="fas fa-gift"></i> Tạo Mã Kích Hoạt</h2>
-        
-        <div class="tg-card p-4 rounded-lg shadow-sm mb-5">
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-sm font-medium tg-hint mb-1">Mã Code (Tùy chỉnh hoặc Random)</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="code-input" class="w-full p-2 border rounded bg-transparent tg-text" placeholder="VD: VIPPRO99">
-                        <button onclick="randomCode()" class="tg-btn px-3 rounded"><i class="fas fa-random"></i></button>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium tg-hint mb-1">Cấp bậc</label>
-                    <select id="role-input" class="w-full p-2 border rounded bg-transparent tg-text">
-                        <option value="pro" style="color: black;">PRO</option>
-                        <option value="ultra" style="color: black;">ULTRA</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium tg-hint mb-1">Số ngày</label>
-                        <input type="number" id="days-input" class="w-full p-2 border rounded bg-transparent tg-text" value="30">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium tg-hint mb-1">Số lần nhập</label>
-                        <input type="number" id="uses-input" class="w-full p-2 border rounded bg-transparent tg-text" value="1" placeholder="0 = vô hạn">
-                    </div>
-                </div>
-                <button onclick="generateCodeCmd()" class="w-full tg-btn py-2 rounded-lg font-bold mt-2">
-                    <i class="fas fa-magic"></i> Tạo Code Ngay!
-                </button>
-            </div>
-            <p class="text-xs text-green-600 text-center mt-2 font-medium">Mini App sẽ tự đóng và Bot sẽ thực hiện lệnh tạo code ngay lập tức.</p>
-        </div>
-
-        <h3 class="font-bold tg-text mb-2">Các Code đã tạo:</h3>
-        <div id="codes-container" class="space-y-2">
-            <!-- Render list code đã tạo -->
-        </div>
-    </div>
-
-    <!-- Cài đặt -->
-    <div id="settings" class="tab-content">
-        <h2 class="text-lg font-bold mb-3 tg-text"><i class="fas fa-cog"></i> Cài đặt chung</h2>
-        
-        <div class="tg-card p-4 rounded-lg shadow-sm flex justify-between items-center">
-            <div>
-                <p class="font-bold tg-text">Thông báo User mới</p>
-                <p class="text-xs tg-hint">Báo cho Admin khi có người nhắn /start</p>
-            </div>
-            <div>
-                <span id="notify-status" class="px-3 py-1 rounded-full text-xs font-bold text-white mb-2 block text-center">...</span>
-                <button onclick="toggleNotifyCmd()" class="tg-btn text-xs px-3 py-1 rounded w-full">Đổi trạng thái</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        let adminData = { u: [], m: [], c: [], s: { notify_new_user: true } };
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        // Định dạng thời gian
-        function formatDate(timestamp) {
-            if (!timestamp) return 'Chưa có';
-            const d = new Date(timestamp * 1000);
-            return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        }
-
-        function getRoleBadge(role) {
-            const colors = {
-                'admin': 'bg-red-500 text-white',
-                'ultra': 'bg-purple-500 text-white',
-                'pro': 'bg-blue-500 text-white',
-                'basic': 'bg-gray-200 text-gray-700'
-            };
-            return `<span class="px-2 py-0.5 rounded text-xs font-bold ${colors[role] || colors['basic']}">${role.toUpperCase()}</span>`;
-        }
-
-        // Đọc dữ liệu từ URL
-        window.onload = function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const base64Data = urlParams.get('data');
-
-            if (base64Data) {
-                try {
-                    const jsonString = decodeURIComponent(escape(atob(base64Data)));
-                    adminData = JSON.parse(jsonString);
-                    renderData();
-                } catch (e) {
-                    tg.showAlert("Lỗi đọc dữ liệu: " + e.message);
-                }
-            } else {
-                tg.showAlert("Không có dữ liệu truyền vào!");
+        // Helper giải mã dữ liệu từ URL Base64
+        function getPayloadFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const base64Data = params.get('data');
+                if (!base64Data) return null;
+                const jsonStr = decodeURIComponent(escape(atob(base64Data)));
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Lỗi parse data:", e);
+                return null;
             }
+        }
+
+        const formatDate = (ts) => {
+            if (!ts) return "-";
+            const d = new Date(ts * 1000);
+            return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
         };
 
-        function renderData() {
-            // Render Users
-            const userContainer = document.getElementById('users-container');
-            document.getElementById('total-users').innerText = adminData.u.length;
-            
-            if (adminData.u.length === 0) {
-                userContainer.innerHTML = '<p class="text-center tg-hint">Chưa có người dùng nào.</p>';
-            } else {
-                adminData.u.sort((a,b) => b.j - a.j);
-                userContainer.innerHTML = adminData.u.map(u => `
-                    <div class="tg-card p-3 rounded-lg shadow-sm border-l-4 ${u.r === 'admin' ? 'border-red-500' : (u.r === 'ultra' ? 'border-purple-500' : 'border-blue-500')}">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <p class="font-bold tg-text">${u.n || 'Unknown'} ${u.u ? '<span class="text-blue-500 text-sm font-normal">@'+u.u+'</span>' : ''}</p>
-                                <p class="text-xs tg-hint font-mono">ID: ${u.id}</p>
+        const Badge = ({ role }) => {
+            const colors = {
+                admin: "bg-red-500/20 text-red-400 border-red-500/50",
+                ultra: "bg-purple-500/20 text-purple-400 border-purple-500/50",
+                pro: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+                basic: "bg-gray-500/20 text-gray-400 border-gray-500/50"
+            };
+            return (
+                <span className={`px-2 py-1 text-xs rounded-full border ${colors[role] || colors.basic} font-medium uppercase tracking-wider`}>
+                    {role}
+                </span>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('users');
+            const [data, setData] = useState({ users: [], monitors: [], codes: [] });
+            const [searchUser, setSearchUser] = useState('');
+
+            useEffect(() => {
+                const payload = getPayloadFromUrl();
+                if (payload) {
+                    setData(payload);
+                }
+            }, []);
+
+            // Icons rendering setup for Lucide after React mount
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            });
+
+            const filteredUsers = useMemo(() => {
+                return data.users.filter(u => 
+                    (u.n || '').toLowerCase().includes(searchUser.toLowerCase()) || 
+                    (u.u || '').toLowerCase().includes(searchUser.toLowerCase()) ||
+                    (u.i || '').includes(searchUser)
+                );
+            }, [data.users, searchUser]);
+
+            if (!data.users.length && !data.monitors.length && !data.codes.length) {
+                return (
+                    <div className="flex h-screen items-center justify-center p-4 text-center">
+                        <div className="glass-panel p-8 rounded-2xl max-w-sm w-full">
+                            <i data-lucide="shield-alert" className="mx-auto h-12 w-12 text-slate-400 mb-4"></i>
+                            <h2 className="text-xl font-bold mb-2">Không tìm thấy dữ liệu</h2>
+                            <p className="text-slate-400 text-sm">Vui lòng mở Mini App này trực tiếp từ Telegram Bot thông qua lệnh /date.</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="max-w-4xl mx-auto p-2 sm:p-4 pb-20">
+                    {/* Header Stats */}
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                        <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center">
+                            <i data-lucide="users" className="h-6 w-6 text-blue-400 mb-2"></i>
+                            <div className="text-2xl font-bold">{data.users.length}</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wide">Users</div>
+                        </div>
+                        <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center">
+                            <i data-lucide="activity" className="h-6 w-6 text-green-400 mb-2"></i>
+                            <div className="text-2xl font-bold">{data.monitors.length}</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wide">Monitors</div>
+                        </div>
+                        <div className="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center">
+                            <i data-lucide="ticket" className="h-6 w-6 text-purple-400 mb-2"></i>
+                            <div className="text-2xl font-bold">{data.codes.length}</div>
+                            <div className="text-xs text-slate-400 uppercase tracking-wide">Codes Active</div>
+                        </div>
+                    </div>
+
+                    {/* Tabs Navigation */}
+                    <div className="flex border-b border-slate-700 mb-6">
+                        <button onClick={() => setActiveTab('users')} className={`flex-1 py-3 text-sm font-medium transition-colors tab-btn ${activeTab === 'users' ? 'active' : 'text-slate-400 hover:text-slate-200'}`}>
+                            Users
+                        </button>
+                        <button onClick={() => setActiveTab('monitors')} className={`flex-1 py-3 text-sm font-medium transition-colors tab-btn ${activeTab === 'monitors' ? 'active' : 'text-slate-400 hover:text-slate-200'}`}>
+                            Hệ thống Check
+                        </button>
+                        <button onClick={() => setActiveTab('codes')} className={`flex-1 py-3 text-sm font-medium transition-colors tab-btn ${activeTab === 'codes' ? 'active' : 'text-slate-400 hover:text-slate-200'}`}>
+                            Mã Quà Tặng
+                        </button>
+                    </div>
+
+                    {/* TAB: USERS */}
+                    {activeTab === 'users' && (
+                        <div className="animate-fade-in">
+                            <div className="relative mb-4">
+                                <i data-lucide="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <input 
+                                    type="text" 
+                                    placeholder="Tìm kiếm theo Tên, Username hoặc ID..." 
+                                    value={searchUser}
+                                    onChange={(e) => setSearchUser(e.target.value)}
+                                    className="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                />
                             </div>
-                            ${getRoleBadge(u.r)}
+                            
+                            <div className="glass-panel rounded-xl overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-slate-400 bg-slate-800/50 uppercase">
+                                            <tr>
+                                                <th className="px-4 py-3">User Info</th>
+                                                <th className="px-4 py-3">Cấp Bậc</th>
+                                                <th className="px-4 py-3 text-right">Ngày Tham Gia</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-700/50">
+                                            {filteredUsers.map((u, idx) => (
+                                                <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                                                    <td className="px-4 py-3">
+                                                        <div className="font-medium text-slate-200">{u.n || 'Unknown'}</div>
+                                                        <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                                            <span>{u.i}</span>
+                                                            {u.u && <span>• @{u.u}</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Badge role={u.r} />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right text-slate-400">
+                                                        {formatDate(u.j)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {filteredUsers.length === 0 && (
+                                                <tr><td colSpan="3" className="px-4 py-8 text-center text-slate-500">Không có dữ liệu</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-xs tg-hint grid grid-cols-2 gap-1 mt-2 bg-gray-50/50 p-2 rounded">
-                            <p>Tham gia: <span class="tg-text font-medium">${formatDate(u.j)}</span></p>
-                            <p>Hết hạn: <span class="tg-text font-medium ${u.e && u.e < Date.now()/1000 ? 'text-red-500' : ''}">${formatDate(u.e)}</span></p>
+                    )}
+
+                    {/* TAB: MONITORS */}
+                    {activeTab === 'monitors' && (
+                        <div className="animate-fade-in glass-panel rounded-xl overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-slate-400 bg-slate-800/50 uppercase">
+                                        <tr>
+                                            <th className="px-4 py-3">Target UID</th>
+                                            <th className="px-4 py-3">Trạng Thái</th>
+                                            <th className="px-4 py-3">Ghi Chú</th>
+                                            <th className="px-4 py-3 text-right">Người Add</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-700/50">
+                                        {data.monitors.map((m, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                                                <td className="px-4 py-3 font-mono text-slate-300">{m.u}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`flex items-center gap-1 text-xs font-medium ${m.s === 'LIVE' ? 'text-green-400' : 'text-red-400'}`}>
+                                                        <span className={`w-2 h-2 rounded-full ${m.s === 'LIVE' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                                        {m.s}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-slate-400 truncate max-w-[120px]">{m.n}</td>
+                                                <td className="px-4 py-3 text-right text-slate-400 text-xs truncate max-w-[100px]" title={m.o}>
+                                                    {m.o}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {data.monitors.length === 0 && (
+                                            <tr><td colSpan="4" className="px-4 py-8 text-center text-slate-500">Hệ thống chưa có UID nào được chạy ngầm</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-            }
+                    )}
 
-            // Render Monitors
-            const monContainer = document.getElementById('monitors-container');
-            document.getElementById('total-monitors').innerText = adminData.m.length;
-            
-            if (adminData.m.length === 0) {
-                monContainer.innerHTML = '<p class="text-center tg-hint">Chưa có UID nào được theo dõi.</p>';
-            } else {
-                monContainer.innerHTML = adminData.m.map(m => `
-                    <div class="tg-card p-3 rounded-lg shadow-sm flex items-center justify-between">
-                        <div>
-                            <p class="font-bold tg-text font-mono">${m.uid}</p>
-                            <p class="text-xs tg-hint">Thêm bởi: <span class="text-blue-500">${m.by}</span></p>
+                    {/* TAB: CODES */}
+                    {activeTab === 'codes' && (
+                        <div className="animate-fade-in glass-panel rounded-xl overflow-hidden">
+                            <div className="p-4 bg-slate-800/50 border-b border-slate-700 text-sm text-slate-300">
+                                💡 Gợi ý: Tạo code trên Telegram bằng lệnh <code className="bg-slate-900 px-1 py-0.5 rounded text-blue-300">/reg_code</code>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="text-xs text-slate-400 bg-slate-800/50 uppercase">
+                                        <tr>
+                                            <th className="px-4 py-3">Mã Code</th>
+                                            <th className="px-4 py-3">Quyền lợi</th>
+                                            <th className="px-4 py-3 text-right">Lượt dùng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-700/50">
+                                        {data.codes.map((c, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
+                                                <td className="px-4 py-3">
+                                                    <div className="font-mono font-bold text-yellow-400">{c.c}</div>
+                                                    <div className="text-xs text-slate-500 mt-1">Tạo: {formatDate(c.t)}</div>
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <Badge role={c.r} />
+                                                        <span className="text-xs text-slate-400">+{c.d} ngày</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    {c.u === -1 ? (
+                                                        <span className="text-emerald-400 font-medium text-xs bg-emerald-400/10 px-2 py-1 rounded-full">Vô hạn</span>
+                                                    ) : (
+                                                        <span className="font-medium">{c.u} lượt</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {data.codes.length === 0 && (
+                                            <tr><td colSpan="3" className="px-4 py-8 text-center text-slate-500">Chưa có mã Code nào được tạo</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                        <span class="px-2 py-1 rounded text-xs font-bold ${m.s === 'LIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                            ${m.s === 'LIVE' ? '🟢 LIVE' : '🔴 DIE'}
-                        </span>
-                    </div>
-                `).join('');
-            }
+                    )}
+                </div>
+            );
+        };
 
-            // Render Settings
-            const notifSpan = document.getElementById('notify-status');
-            if (adminData.s.notify_new_user) {
-                notifSpan.textContent = "ĐANG BẬT";
-                notifSpan.classList.add('bg-green-500');
-                notifSpan.classList.remove('bg-gray-400');
-            } else {
-                notifSpan.textContent = "ĐANG TẮT";
-                notifSpan.classList.add('bg-gray-400');
-                notifSpan.classList.remove('bg-green-500');
-            }
-
-            // Render Codes List
-            const codeContainer = document.getElementById('codes-container');
-            if (adminData.c.length === 0) {
-                codeContainer.innerHTML = '<p class="text-xs text-center tg-hint">Chưa có mã nào được tạo.</p>';
-            } else {
-                codeContainer.innerHTML = adminData.c.map(c => `
-                    <div class="tg-card p-2 rounded flex justify-between items-center border border-gray-100">
-                        <div>
-                            <p class="font-bold tg-text font-mono">${c.c}</p>
-                            <p class="text-[10px] tg-hint">${c.d} ngày | Đã dùng: ${c.u}/${c.m === 0 ? '∞' : c.m}</p>
-                        </div>
-                        ${getRoleBadge(c.r)}
-                    </div>
-                `).join('');
-            }
-        }
-
-        function randomCode() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let result = '';
-            for (let i = 0; i < 8; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('code-input').value = result;
-        }
-
-        // GỬI DỮ LIỆU THẲNG VỀ BOT VÀ ĐÓNG APP
-        function generateCodeCmd() {
-            const code = document.getElementById('code-input').value.trim();
-            const role = document.getElementById('role-input').value;
-            const days = document.getElementById('days-input').value;
-            const uses = document.getElementById('uses-input').value;
-
-            if (!code) {
-                tg.showAlert("Vui lòng nhập hoặc random Mã Code!");
-                return;
-            }
-
-            // Gom dữ liệu thành dạng JSON
-            const payload = {
-                action: "makecode",
-                code: code,
-                role: role,
-                days: parseInt(days),
-                uses: parseInt(uses)
-            };
-
-            // Hàm này gửi chuỗi ngầm cho Bot. Ngay sau khi gọi, App tự đóng.
-            tg.sendData(JSON.stringify(payload));
-        }
-
-        function toggleNotifyCmd() {
-            const payload = {
-                action: "toggle_notify"
-            };
-            tg.sendData(JSON.stringify(payload));
-        }
-
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
