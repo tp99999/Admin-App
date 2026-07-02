@@ -83,14 +83,10 @@
                     </div>
                 </div>
                 <button onclick="generateCodeCmd()" class="w-full tg-btn py-2 rounded-lg font-bold mt-2">
-                    <i class="fas fa-magic"></i> Copy Lệnh Tạo Code
+                    <i class="fas fa-magic"></i> Tạo Code Ngay!
                 </button>
             </div>
-            
-            <div id="cmd-result" class="mt-3 p-3 bg-green-100 text-green-800 rounded-lg text-sm hidden font-mono break-all text-center">
-                <!-- Chứa lệnh được copy -->
-            </div>
-            <p class="text-xs tg-hint text-center mt-2">Do giới hạn của Telegram, bạn hãy copy lệnh và dán vào Bot để tạo nhé.</p>
+            <p class="text-xs text-green-600 text-center mt-2 font-medium">Mini App sẽ tự đóng và Bot sẽ thực hiện lệnh tạo code ngay lập tức.</p>
         </div>
 
         <h3 class="font-bold tg-text mb-2">Các Code đã tạo:</h3>
@@ -110,12 +106,8 @@
             </div>
             <div>
                 <span id="notify-status" class="px-3 py-1 rounded-full text-xs font-bold text-white mb-2 block text-center">...</span>
-                <button onclick="toggleNotifyCmd()" class="tg-btn text-xs px-3 py-1 rounded w-full">Thay đổi</button>
+                <button onclick="toggleNotifyCmd()" class="tg-btn text-xs px-3 py-1 rounded w-full">Đổi trạng thái</button>
             </div>
-        </div>
-
-        <div id="setting-cmd-result" class="mt-3 p-3 bg-blue-100 text-blue-800 rounded-lg text-sm hidden font-mono break-all text-center">
-            <!-- Chứa lệnh được copy -->
         </div>
     </div>
 
@@ -140,7 +132,6 @@
             return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
         }
 
-        // Get Role badge
         function getRoleBadge(role) {
             const colors = {
                 'admin': 'bg-red-500 text-white',
@@ -177,7 +168,6 @@
             if (adminData.u.length === 0) {
                 userContainer.innerHTML = '<p class="text-center tg-hint">Chưa có người dùng nào.</p>';
             } else {
-                // Sắp xếp user mới nhất lên trên
                 adminData.u.sort((a,b) => b.j - a.j);
                 userContainer.innerHTML = adminData.u.map(u => `
                     <div class="tg-card p-3 rounded-lg shadow-sm border-l-4 ${u.r === 'admin' ? 'border-red-500' : (u.r === 'ultra' ? 'border-purple-500' : 'border-blue-500')}">
@@ -245,7 +235,6 @@
             }
         }
 
-        // Logic Code Generation
         function randomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let result = '';
@@ -254,24 +243,8 @@
             }
             document.getElementById('code-input').value = result;
         }
-        
-        function fallbackCopyTextToClipboard(text) {
-            var textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
-            }
-            document.body.removeChild(textArea);
-        }
 
+        // GỬI DỮ LIỆU THẲNG VỀ BOT VÀ ĐÓNG APP
         function generateCodeCmd() {
             const code = document.getElementById('code-input').value.trim();
             const role = document.getElementById('role-input').value;
@@ -283,28 +256,26 @@
                 return;
             }
 
-            const cmd = `/makecode ${code} ${role} ${days} ${uses}`;
-            fallbackCopyTextToClipboard(cmd);
-            
-            const resDiv = document.getElementById('cmd-result');
-            resDiv.innerHTML = `Đã copy lệnh:<br><strong class="text-lg">${cmd}</strong><br><span class="text-xs text-gray-500 mt-1 block">Hãy tắt bảng này và dán lệnh vào chat với Bot nhé!</span>`;
-            resDiv.classList.remove('hidden');
-            
-            tg.HapticFeedback.notificationOccurred('success');
+            // Gom dữ liệu thành dạng JSON
+            const payload = {
+                action: "makecode",
+                code: code,
+                role: role,
+                days: parseInt(days),
+                uses: parseInt(uses)
+            };
+
+            // Hàm này gửi chuỗi ngầm cho Bot. Ngay sau khi gọi, App tự đóng.
+            tg.sendData(JSON.stringify(payload));
         }
 
         function toggleNotifyCmd() {
-            const cmd = `/setting notify`;
-            fallbackCopyTextToClipboard(cmd);
-            
-            const resDiv = document.getElementById('setting-cmd-result');
-            resDiv.innerHTML = `Đã copy lệnh thay đổi trạng thái:<br><strong class="text-lg">${cmd}</strong><br><span class="text-xs text-gray-500 mt-1 block">Tắt bảng này và dán lệnh vào chat với Bot!</span>`;
-            resDiv.classList.remove('hidden');
-            
-            tg.HapticFeedback.notificationOccurred('success');
+            const payload = {
+                action: "toggle_notify"
+            };
+            tg.sendData(JSON.stringify(payload));
         }
 
     </script>
 </body>
 </html>
-
